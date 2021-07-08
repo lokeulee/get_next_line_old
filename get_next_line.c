@@ -1,86 +1,52 @@
 #include "get_next_line.h"
 
-char    *save_line(char *buffer)
+int		get_good(char **str, char **line, int reader)
 {
-    int     index;
-    int     jndex;
-    char    *heap;
+    int		i;
+    char	*temp;
 
-    index = 0;
-    jndex = 0;
-    if (!buffer)
-        return (0);
-    while (buffer[index] && buffer[index] != '\n')
-        index++;
-    if (!buffer[index])
-    {
-        free(buffer);
-        return (0);
-    }
-    heap = malloc(sizeof(char) * (ft_strlen(buffer) - index + 1));
-    if (!heap)
-        return (0);
-    index++;
-    while (buffer[index])
-    {
-        heap[jndex] = buffer[index];
-        index++;
-        jndex++;
-    }
-    heap[index] = '\0';
-    free(buffer);
-    return (heap);
+	if (reader < 0)
+		return (-1);
+	while ((*str)[i] && (*str)[i] != '\n')
+		i++;
+	if ((*str)[i] == '\n')
+	{
+		*line = ft_substr(*str, 0, i);
+		temp = ft_strdup(&((*str)[i + 1]));
+		free(*str);
+		*str = temp;
+	}
+	else if ((*str)[i] == '\0')
+	{
+		*line = ft_strdup(*str);
+		free(*str);
+		*str = NULL;
+		return (0);
+	}
+	return (1);
 }
 
-char    *get_line(char *line)
+int		get_next_line(int fd, char **line)
 {
-    int     index;
-    char    *heap;
-
-    index = 0;
-    if (!line)
-        return (0);
-    while (line[index] && line[index] != '\n')
-        index++;
-    heap = (char *)malloc(sizeof(char) * index + 1);
-    if (!heap)
-        return (0);
-    index = 0;
-    while (line[index] && line[index] != '\n')
-    {
-        heap[index] = line[index];
-        index++;
-    }
-    heap[index] = '\0';
-    return (heap);
-}
-
-int get_next_line(int fd, char **line)
-{
-    static char *str;
-    int         reader;
-    char        *buffer;
+    static char	*str;
+    int			reader;
+    char		buffer[BUFFER_SIZE + 1];
+    char		*temp;
 
     if (fd < 0 || !line || BUFFER_SIZE <= 0)
-        return (-1);
-    buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
-    if (!buffer)
         return (-1);
     reader = 1;
     while (!ft_strchr(str, '\n') && reader > 0)
     {
-        if ((reader = read(fd, buffer, BUFFER_SIZE)) == -1)
-		{
-			free(buffer);
+        reader = read(fd, buffer, BUFFER_SIZE);
+		if (reader < 0)
 			return (-1);
-		}
-        buffer[reader] = '\0';   
-        str = ft_strjoin(str, buffer);
+        if (!str)
+			str = ft_calloc(1,1);
+		buffer[reader] = '\0';
+        temp = ft_strjoin(str, buffer);
+        free(str);
+        str = temp;
     }
-    free(buffer);
-    *line = get_line(str);
-    str = save_line(str);
-    if (reader == 0)
-        return (0);
-    return (1);
+    return (get_good(&str, line, reader));
 }
